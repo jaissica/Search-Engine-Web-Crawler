@@ -1,0 +1,466 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="Content-Type" content="text/html">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>CS 6200 | Information Retrieval</title>
+	<meta name="keywords" content="">
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+		integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+	</script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js"
+		integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous">
+	</script>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+		integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+		integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous">
+	</script>
+
+	<link href="../assets/style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+	
+	<div id="main-content" class="container">
+		<div class="container">
+			<div class="row">
+			  <div class="col-md-12">
+				<div>
+				  <article id="content">
+					<h3 style="background-color: white; color: black;
+					  font-family: AppleGothic;"><big><big><big><small>CS6200
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+							  Information Retrieval<br>
+							</small> <small><font color="#3333ff">Homework3:
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+								Crawling, Merging, Vertical Search</font></small></big></big></big></h3>
+					<!-- # TODO
+	
+	* Clean up language about team
+	* Have students dedup by canonical URL and don’t index same doc twice — use hashcode of url in _id
+	* Index to elasticsearch right away, store both raw and clean versions. No output files.
+	* Submit merged index — use distinct cluster name for each group and merge via ES
+	* Team should share canonicalization code
+	* submit “top 3 topics” early to pick one or get assigned one -->
+					<h1 id="objective">Objective</h1>
+					<p>In this assignment, you will work with a team to
+					  create a vertical search engine using elasticsearch.
+					  Please read these instructions carefully: although you
+					  are working with teammates, you will be graded
+					  individually for most of the assignment.</p>
+					<p>You will write a web crawler, and crawl Internet
+					  documents to construct a document collection focused
+					  on a particular topic. Your crawler must conform
+					  strictly to a particular politeness policy. Once the
+					  documents are crawled, you will pool them together.</p>
+					<p>Form a team of three students with your classmates.
+					  Your team will be assigned a single query with few
+					  associated seed URLs. You will each crawl web pages
+					  starting from a different seed URL. When you have each
+					  collected your individual documents, you will pool
+					  them together, index them and implement search.</p>
+					<p>Although you are working in a team, you are each
+					  responsible for developing your own crawlers
+					  individually, and for crawling from your own seeds for
+					  your team’s assigned topic.</p>
+					<h1 id="obtaining_a_topic">Obtaining a topic</h1>
+					<p>Form a team of three students with your classmates.
+					  If you have trouble finding teammates, please contact
+					  the TAs right away to be placed in a team.</p>
+					<p>Once your team has been formed, a Teams channel will be created for each team.
+					  
+					  A topic and three seed
+					  URLs will be shared with the teach through the team's channel.</p>
+					<p>Each individual on your team will crawl using three
+					  seed URLs: one of the URLs provided to the team, and
+					  at least two additional seed URLs you devise on your
+					  own. In total, the members of your team will crawl
+					  from at least nine seed URLs.</p>
+					<h1 id="crawling_documents">Task1: Crawling Documents</h1>
+					<p>Each individual is responsible for writing their own
+					  crawler, and crawling from their own seed URLs.</p>
+					<p>Set up Elastic Search with your teammates to have the
+					  same cluster name and the same index name.</p>
+					<p>Your crawler will manage a <em>frontier</em> of URLs
+					  to be crawled. The frontier will initially contain
+					  just your seed URLs. URLs will be added to the
+					  frontier as you crawl, by finding the links on the web
+					  pages you crawl.</p>
+					<ol>
+					  <li>You should crawl at least 40,000 documents
+						individually, starting from the seed URLs. This will
+						take several hours, so think carefully about how to
+						adequately test your program without running it to
+						completion in each debugging cycle.</li>
+					  <li>You should choose the next URL to crawl from your
+						frontier using a best-first strategy. See Frontier
+						Management, below.</li>
+					  <li>Your crawler must strictly conform to the
+						politeness policy detailed in the section below. You
+						will be consuming resources owned by the web sites
+						you crawl, and many of them are actively looking for
+						misbehaving crawlers to permanently block. Please be
+						considerate of the resources you consume.</li>
+					  <li>You should only crawl HTML documents. It is up to
+						you to devise a way to ensure this. However, do not
+						reject documents simply because their URLs don’t end
+						in .html or .htm.</li>
+					  <li>You should find all outgoing links on the pages
+						you crawl, canonicalize them, and add them to your
+						frontier if they are new. See the Document
+						Processing and URL Canonicalization sections below
+						for a discussion.</li>
+					  <li>For each page you crawl, you should store the
+						following filed with ElasticSearch : an id, the URL,
+						the HTTP headers, the page contents cleaned (with
+						term positions), the raw html, and a list of all
+						in-links (known) and out-links for the page. </li>
+					</ol>
+					<p>Once your crawl is done, you should get together with
+					  your teammates and figure out how to merge the
+					  indexes. Either ElasticSearch will do
+					  the merging itself (if your computers are connected wile indexing new documents), but you still have to manage the link
+					  graph. Alternatively you can write a script to merge the indivudual indexes; ultimately all team members should end up with the merged index</p>
+					<h2 id="politeness_policy">Politeness Policy</h2>
+					<p>Your crawler must strictly observe this politeness
+					  policy at all times, including during development and
+					  testing. Violating these policies can harm to the web
+					  sites you crawl, and cause the web site administrators
+					  to block the IP address from which you are crawling.</p>
+					<ol>
+					  <li>Make no more than one HTTP request per second from
+						any given domain. You may crawl multiple pages from
+						different domains at the same time, but be prepared
+						to convince the TAs that your crawler obeys this
+						rule. The simplest approach is to make one request
+						at a time and have your program sleep between
+						requests. The one exception to this rule is that if
+						you make a HEAD request for a URL, you may then make
+						a GET request for the same URL without waiting.</li>
+					  <li>Before you crawl the first page from a given
+						domain, fetch its robots.txt file and make sure your
+						crawler strictly obeys the file. You should use a
+						third party library to parse the file and tell you
+						which URLs are OK to crawl.</li>
+					</ol>
+					<h2 id="frontier_management">Frontier Management</h2>
+					<p>The <em>frontier</em> is the data structure you use
+					  to store pages you need to crawl. For each page, the
+					  frontier should store the canonicalized page URL and
+					  the in-link count to the page from other pages you
+					  have already crawled. After processing a batch of URLs, you should localy rearrange the frontier by (some of) the follwoing criterias (using a proper datastructure for the frontier can make a big difference)</p>
+					<ol>
+					  <li>Seed URLs should always be crawled first. You can add more seed URLs on the topic. </li>
+					  <li>Must use BFS "wave number" as the baseline graph traversal
+						(variations below encouraged)<br>
+					  </li>
+					  <li>Prefer pages with higher in-link counts.</li>
+				<li>Prefer URLs with matching keywords in link or in achor text.</li>
+				<li>Prefer URLs extracted from a relevant page.</li>
+				<li>Prefer certain domains.</li>
+				<li>Prefer recent URLs</li>
+					  <li>If multiple pages have maximal in-link counts,
+						choose the option which has been in the queue the
+						longest.</li>
+					</ol>
+					<p>If the next page in the frontier is at a domain you
+					  have recently crawled a page from and you do not wish
+					  to wait, then you should crawl the next page from a
+					  different domain instead.</p>
+					<h2 id="url_canonicalization">URL Canonicalization</h2>
+					<p>Many URLs can refer to the same web resource. In
+					  order to ensure that you crawl 40,000 distinct web
+					  sites, you should apply the following canonicalization
+					  rules to all URLs you encounter.</p>
+					<ol>
+					  <li>Convert the scheme and host to lower case: <code>HTTP://www.Example.com/SomeFile.html</code>
+						→ <code>http://www.example.com/SomeFile.html</code></li>
+					  <li>Remove port 80 from http URLs, and port 443 from
+						HTTPS URLs: <code>http://www.example.com:80</code>
+						→ <code>http://www.example.com</code></li>
+					  <li>Make relative URLs absolute: if you crawl <code>http://www.example.com/a/b.html</code>
+						and find the URL <code>../c.html</code>, it should
+						canonicalize to <code>http://www.example.com/c.html</code>.</li>
+					  <li>Remove the fragment, which begins with <code>#</code>:
+						<code>http://www.example.com/a.html#anything</code>
+						→ <code>http://www.example.com/a.html</code></li>
+					  <li>Remove duplicate slashes: <code>http://www.example.com//a.html</code>
+						→ <code>http://www.example.com/a.html</code></li>
+					</ol>
+					<p>You may add additional canonicalization rules to
+					  improve performance, if you wish to do so.</p>
+					<h2 id="document_processing">Document Processing</h2>
+					<p>Once you have downloaded a web page, you will need to
+					  parse it to update the frontier and save its contents.
+					  You should parse it using a third party library. We
+					  suggest jsoup for Java, and Beautiful Soup for Python.
+					  You will need to do the following:</p>
+					<ol>
+					  <li>Extract all links in <code>&lt;a&gt;</code> tags.
+						Canonicalize the URL, add it to the frontier if it
+						has not been crawled (or increment the in-link count
+						if the URL is already in the frontier), and record
+						it as an out-link in the link graph file.</li>
+					  <li>Extract the document text, stripped of all HTML
+						formatting, JavaScript, CSS, and so on. Write the
+						document text to a file in the same format as the
+						AP89 corpus, as described below. Use the canonical
+						URL as the DOCNO. If the page has a <code>&lt;title&gt;</code>
+						tag, store its contents in a <code>&lt;HEAD&gt;</code>
+						element in the file. This will allow you to use your
+						existing indexing code from HW1 to index these
+						documents.</li>
+					  <li>Store the entire HTTP response separately, as
+						described below.</li>
+					</ol>
+					<!-- ## Crawler Output
+	
+	For each page you crawl, you should write the following output.
+	
+	**Indexable Document Contents**
+	
+	Produce a single file named `crawl_name.trec`, where “name” is your first initial and last name (e.g. “Tom Cruise” would use `crawl_tcruise.trec`), which contains the documents you have crawled in a TREC-style file. Each document should look something like this:
+	
+	```
+	<DOC>
+	<DOCNO>http://www.example.com/something.html</DOCNO>
+	<HEAD>The page title</HEAD>
+	<TEXT>The body text from the document</TEXT>
+	</DOC>
+	```
+	
+	This file will be used later to index the documents.
+	
+	**Raw Document Contents**
+	
+	You should also store the document in the WARC format named `crawl_name.warc`, following the same convention for your name. This format preserves the HTTP headers and raw HTTP content. The file should begin with the line:
+	
+	```
+	WARC/0.18
+	```
+	
+	Each document record consists of a header, a blank line, and the entire raw HTTP response (including HTTP headers). It looks like this:
+	
+	```
+	WARC-Type: response
+	WARC-Target-URI: http://www.example.com/something.html
+	WARC-Date: 2015-03-69T11:04:55-0700
+	Content-Length: 11253
+	
+	HTTP/1.1 200 OK
+	Content-Type: text/html; charset=UTF-8
+	Server: Apache/2.2.3 (CentOS)
+	X-Powered-By: PHP/5.1.6
+	Last-Modified: Wed, 07 Jan 2009 10:29:05 GMT
+	Date: Sat, 07 Feb 2009 14:46:08 GMT
+	Connection: close
+	Content-Length: 11020
+	
+	Page contents...
+	```
+	
+	Please set the WARC-Target-URI, WARC-Date, and Content-Length fields in the WARC header appropriately. -->
+					<h1 id="link_graph">Task2: Link Graph</h1>
+					<p>You should also write a link graph reporting all
+					  out-links from each URL you crawl, all the inlinks you
+					  have encountered (obviously there will be inlinks on
+					  the web that you dont discover). This will be used in
+					  a future assignment to calculate PageRank for your
+					  collection. </p>
+					<ul>
+					  <li>
+						<p>option 1 : We prefer that you store the canonical
+						  links as two fields “inlinks” and “outlinks” in
+						  ElasticSearch, for each document. You will have to
+						  manage these fields appropriately, such that when
+						  you are done, your team has correct links for all
+						  document crawled.</p>
+					  </li>
+					  <li>
+						<p>option 2: maintain a separate links file (you can
+						  do this even if you also do option1). Each line of
+						  this file contains a tab-separated list of
+						  canonical URLs. The first URL is a document you
+						  crawled, and the remaining URLs are out-links from
+						  the document. When all team members are finished
+						  with their crawls, you should merge your link
+						  graphs. Only submit one file, containing this
+						  merged graph. During the merge process, reduce any
+						  URL which was not crawled to just a domain.</p>
+					  </li>
+					</ul>
+					<h1 id="vertical_search">Task3: Merging team indexes<br>
+					</h1>
+					<p>Ideally we would like to have the crawling process
+					  send any stored data directly to the team-index, while
+					  merging. But this is too much of a headache for
+					  students to keep their ES servers connected while
+					  crawling; so we allow for individual crawls, then
+					  merged in ES. If you use individual crawls to be
+					  merged at the end, you have to simulate a realistic
+					  environment: merge indexes (or the crawled data) into
+					  one ES index. Merging should happen as independent
+					  agents : everyone updates the index independently
+					  while ES servers are connected. Meaning not in a
+					  Master-Slave or Server-Client manner. This is team
+					  work.</p>
+					<p>&nbsp;Once all team members are finished with their
+					  crawls, you will combine the documents to create a
+					  vertical search engine. It is required that team
+					  computer/ES are connected are the time of merging, and
+					  that each team member runs merging code against the
+					  merged index in an independent manner (no master-slave
+					  design)<br>
+					  <br>
+					</p>
+					<h1 id="vertical_search">Task4: Vertical Search (MS students only)</h1>
+					<p>Add all 90,000 documents to an elasticsearch index,
+					  using the canonical URL as the document ID for
+					  de-duplication, and create a simple HTML page which
+					  runs queries against your elasticsearch index. You may
+					  either write your own interface, or use an existing
+					  tool such as <a href="https://github.com/romansanchez/Calaca">Calaca</a>
+					  or <a href="https://github.com/okfn/facetview">FacetView</a>.
+					  Or modify <a href="..assets/uploads/matt_es_client.zip">this one</a>
+					  written by one of our grad students. Your search
+					  engine should allow users to enter text queries, and
+					  display elasticsearch results to those queries from
+					  your index. The result list should contain at minimum
+					  the URL to the page you crawled.</p>
+					<p>Make sure you run several queries on your group’s
+					  topic, and you think about the result quality. During
+					  your demo, you will be asked to explain how your seeds
+					  and crawls affected the search results.</p>
+					<h1 id="extra_credit">Extra Credit</h1>
+					<p>These extra problems are provided for students who
+					  wish to dig deeper into this project. Extra credit is
+					  meant to be significantly harder and more open-ended
+					  than the standard problems. We strongly recommend
+					  completing all of the above before attempting any of
+					  these problems.</p>
+					<p>Points will be awarded based on the difficulty of the
+					  solution you attempt and how far you get. You will
+					  receive no credit unless your solution is “at least
+					  half right,” as determined by the graders.</p>
+					<h2 id="ec1_crawl_more_documents">EC1: Crawl more
+					  documents</h2>
+					<p>Expand your team crawl to 180,000 documents<br>
+					</p>
+					<h2 id="ec1_crawl_more_documents">EC2: Crawl directly
+					  into a merged index<br>
+					</h2>
+					<p>Instead of individual crawl in advance, crawl and
+					  store documents in a distributed ES index, so merging
+					  happens dynamically. This requires consideration and a
+					  laborious setup, but it is the most realistic
+					  scenario:<br>
+					</p>
+					<ul>
+					  <li>have your team computers ES in a stable connection
+						for the duration of the crawl (might take hours!)</li>
+					  <li>create a distributed index, make sure it spans all
+						computers<br>
+					  </li>
+					  <li>each team member starts the crawl at the same
+						time, and each have to independently verify the
+						status of the crawled documents against the
+						distributed index before making changes&nbsp;</li>
+					  <li>finish the crawl with several tens of thousands
+						docs in it</li>
+					  <li>make sure to create replicas of the team index
+						before disconnecting ES serves from each other<br>
+					  </li>
+					</ul>
+					<h2 id="ec2_frontier_management">EC3: Frontier
+					  Management</h2>
+					<p>Experiment with different techniques for selecting
+					  URLs to crawl from your frontier. See the Coverage
+					  slides for the Seattle section for some suggestions.
+					  Does the selection policy appear to impact the quality
+					  of pages crawled?</p>
+					<h2 id="ec3_speed_improvements">EC4: Speed Improvements</h2>
+					<p><em>Without violating the politeness policy,</em>
+					  find ways to optimize your crawler. How fast can you
+					  get it to run? Do your optimizations change the set of
+					  pages you crawl?</p>
+					<h2 id="ec4_search_interface_improvements">EC5: Search
+					  Interface Improvements</h2>
+					<p>Improve meaningfully on your search engine interface.
+					  This may include one or more of the following (or your
+					  own ideas). Instead of just showing URLs, show text
+					  snippets containing the query terms from the document.
+					  Change the visual layout or user interface to make the
+					  search engine easier to use, or to make it easier to
+					  find what you’re looking for. Add domain-specific
+					  search operators, or other custom search operators.</p>
+					<!-- ### Deliverables
+	
+	1. Your group should submit a compressed file containing the TREC and WARC formatted files you crawled and the merged link graph from your individual crawls.
+	2. You should each submit the code for your own crawler. -->
+					<h3 id="rubric">Rubric</h3>
+					<dl class="dl-horizontal">
+					  <dt>10 points</dt>
+					  <dd>You strictly follow the politeness policy</dd>
+					  <dt>10 points</dt>
+					  <dd>You chose reasonable seeds, and understand the
+						impact of seeds on the crawl</dd>
+					  <dt>20 points</dt>
+					  <dd>You crawl pages in the correct order</dd>
+					  <dt>10 points</dt>
+					  <dd>You correctly canonicalize URLs</dd>
+					  <dt>10 points</dt>
+					  <dd>Correctly index with ES</dd>
+					  <dt>10 points</dt>
+					  <dd>Merge crawled pages with your teammates</dd>
+					  <dt>20 points</dt>
+					  <dd>Your group’s vertical search engine works
+						correctly</dd>
+					  <dt>10 points</dt>
+					  <dd>You can explain the quality of your search results</dd>
+					</dl>
+				  </article>
+				</div>
+			  </div>
+			</div>
+		  </div>
+	</div>
+	<footer>
+		<hr>
+		<center>
+			Ⓒ Northeastern University, 2020, all rights reserved<br><br>
+		</center>
+	</footer>
+</body>
+
+</html>
