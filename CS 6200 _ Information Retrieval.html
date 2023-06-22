@@ -1,0 +1,354 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- saved from url=(0055)https://course.ccs.neu.edu/cs6200f20/assignments/2.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<meta http-equiv="Content-Type" content="text/html">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>CS 6200 | Information Retrieval</title>
+	<meta name="keywords" content="">
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<script src="./CS 6200 _ Information Retrieval_files/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous">
+	</script>
+	<script src="./CS 6200 _ Information Retrieval_files/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous">
+	</script>
+	<link rel="stylesheet" href="./CS 6200 _ Information Retrieval_files/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+	<script src="./CS 6200 _ Information Retrieval_files/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous">
+	</script>
+
+	<link href="./CS 6200 _ Information Retrieval_files/style.css" rel="stylesheet" type="text/css">
+</head>
+
+<body data-new-gr-c-s-check-loaded="14.1095.0" data-gr-ext-installed="">
+
+	<div id="main-content" class="container">
+		<div class="container">
+			<div class="row">
+			  <div class="col-md-12">
+				<div>
+				  <article id="content">
+					<h3 style="background-color: white; color: black;
+					  font-family: AppleGothic;"><big><big><big><small>CS6200
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+							  Information Retrieval<br>
+							</small> <small><font color="#3333ff">Homework2:
+	
+	
+	
+	
+	
+	
+	
+	
+								Indexing, Term Positions</font></small></big></big></big></h3>
+					<h1 id="objective:92351f2a225a2a9d81ca1344e332ec47">Objective</h1>
+					<p>Implement your own index that would replace the one from
+					  elasticsearch used in HW1, then index the document
+					  collection used in HW1. Your index should be able to
+					  handle large numbers of documents and terms without
+					  using excessive memory or disk I/O.</p>
+					<p>This assignment involves writing two programs:</p>
+					<ol>
+					  <li>A tokenizer and indexer</li>
+					  <li>An updated version of your HW1 ranker which uses
+						your inverted index</li>
+					</ol>
+					<p>You have some flexibility in the choice of algorithms
+					  and file formats for this assignment. You are expected to 
+					  to explain and justify your approach, any
+					  reasonable approach should work.</p>
+					<h1 id="step-one-tokenizing:92351f2a225a2a9d81ca1344e332ec47">Task1: Tokenizing</h1>
+					<p>The first step of indexing is tokenizing documents
+					  from the collection. That is, given a raw document you
+					  need to produce a sequence of <em>tokens</em>. For
+					  the purposes of this assignment, a token is a
+					  contiguous sequence of characters which matches a
+					  regular expression (of your choice) – that is, any
+					  number of letters and numbers, possibly separated by
+					  single periods in the middle. For instance, <code>bob</code>
+					  and <code>376</code> and <code>98.6</code> and <code>192.160.0.1</code>
+					  are all tokens. <code>123,456</code> and <code>aunt's</code>
+					  are not tokens (each of these examples is two tokens
+					  —&nbsp;why?). All alphabetic characters should be
+					  converted to lowercase during tokenization, so <code>bob</code>
+					  and <code>Bob</code> and <code>BOB</code> are all
+					  tokenized into <code>bob</code>.</p>
+					<p>You should assign a unique integer ID to each term
+					  and document in the collection. For instance, you
+					  might want to use a token’s hash code as its ID.
+					  If you decide to assign IDs, you will need to be
+					  able to convert tokens into term IDs and covert doc
+					  IDs into document names in order to run queries. This
+					  will likely require you to store the maps from term to
+					  term_id and from document to doc_id in your inverted
+					  index. One way to think about the tokenization process
+					  is as a conversion from a document to a sequence of <code>(term_id,
+						doc_id, position)</code> tuples, which needs to be
+					  stored in your inverted index.</p>
+					<p>For instance, given a document with doc_id 20:</p>
+					<pre><code>The car was in the car wash.
+	</code></pre>
+					<p>the tokenizer might produce the tuples:</p>
+					<pre><code>(1, 20, 1), (2, 20, 2), (3, 20, 3), (4, 20, 4), (1, 20, 5), (2, 20, 6), (5, 20, 7)
+	</code></pre>
+					<p>with the term ID map:</p>
+					<pre><code>
+						1: the
+						2: car
+						3: was
+						4: in
+						5: wash
+					</code></pre>
+					<h1 id="step-two-indexing:92351f2a225a2a9d81ca1344e332ec47">Task2: Indexing</h1>
+					<p>The next step is to record each document’s tokens in
+					  an inverted index. The inverted list for a term must
+					  contain the following information:</p>
+					<ul>
+					  <li>The DF and CF (aka TTF) of the term.</li>
+					  <li>A list of IDs of the documents which contain the
+						term, along with the TF of the term within that
+						document and a list of positions within the document
+						where the term occurs. (The first term in a document
+						has position 1, the second term has position 2,
+						etc.)</li>
+					</ul>
+					<p>You should also store the following information.</p>
+					<ul>
+					  <li>The total number of distinct terms (the vocabulary
+						size) and the total number of tokens (total CF) in
+						the document collection.</li>
+					  <li>The map between terms and their IDs, if required
+						by your design.</li>
+					  <li>The map between document names and their IDs, if
+						required by your design.</li>
+					</ul>
+					<p>All inverted lists/files written on the hard drive
+					  should be sorted by DocID if using doc-at-a-time technique. This
+					  will facilitate merging, in particular with mergesort.
+					  <br>
+					</p>
+					<ul>
+					</ul>
+					<h2 id="stemming-and-stopping:92351f2a225a2a9d81ca1344e332ec47">Stemming and Stopping</h2>
+					<p>Experiment with the affects of stemming and stop word
+					  removal on query performance. To do so, create two
+					  separate indexes:</p>
+					<ul>
+					  <li>An index where tokens are not stemmed before indexing,
+						and stopwords are removed</li>
+					  <li>An index where tokens are stemmed and stop words
+						are removed</li>
+					</ul>
+					<p>You should use <a href="https://course.ccs.neu.edu/cs6200f20/assets/uploads/stoplist.txt">this list</a>
+					  of stop words, obtained from NLTK.</p>
+					<p>You may use any standard stemming library. For
+					  instance, the python <code>stemming</code> package
+					  and the Java <code>Weka</code> package contain
+					  stemmer implementations like Porter stemmer.</p>
+					<h2 id="performance-requirements:92351f2a225a2a9d81ca1344e332ec47">Performance
+					  Requirements</h2>
+					<p>Your indexing algorithm should meet the following
+					  performance requirements. You need to add a brief explanation of how you met them in your report. You may also be asked during
+					  your demo to further explain that.</p>
+					<ul>
+	
+					  <li>If you keep partial inverted lists in memory
+						during indexing, you have to limit by number of
+						documents (not store more than 1,000 postings per
+						term in memory at a time). <br>
+					  </li>
+					  <li>Your final inverted index should be stored in a
+						single (or few) file(s), no more than 20. The total
+						size must be at most that of the size of the
+						unindexed document collection, around  160-180MB without stopwords.</li>
+					  <li>You should be able to access the inverted list for
+						an arbitrary term in time at most logarithmic in the
+						vocabulary size, regardless of where that term’s
+						information is stored in the index. You should not
+						need to find an inverted list by scanning through
+						the entire index.</li>
+					  <li>Extra Credit Option: You are permitted to write
+						multiple files during the indexing process, but not
+						more than about 1,000 files total. For instance, you
+						may not store the inverted list for each term in a
+						separate file.</li>
+					</ul>
+
+				  <h2 id="ec1-index-compression:92351f2a225a2a9d81ca1344e332ec47">
+                                          Index Compression (MS students only)</h2>
+                                        <p>Store the index in some compressed format and
+                                          decompress it as needed when accessing it. For the
+                                          sake of this assignment, you may use a software for
+                                          compression or decompression. For instance, it may be
+                                          sufficient to run inverted lists through a gzip/gunzip
+                                          routine in a library.</p>
+
+
+
+					<h1 id="step-three-searching:92351f2a225a2a9d81ca1344e332ec47">Task3:
+					  Searching</h1>
+					<p>Update your solution to HW1 to use your index instead
+					  of elasticsearch. Compare your results to those you
+					  obtained in HW1. Are they different? If so, why? You
+					  dont have to run all 5 models; one VSM, one LM, and
+					  BM25 will suffice.</p>
+					<h2 id="performance-requirements:92351f2a225a2a9d81ca1344e332ec47">Proximity
+	
+	
+	
+	
+	
+	
+					  Search (MS students only)</h2>
+					<p>Add one retrieval model, with scoring based on
+					  proximity on query terms in the document. You can use
+					  the ideas presented in slides, or <a href="http://www.ccs.neu.edu/home/vip/teach/IRcourse/2_indexing_ngrams/lecture_notes/SteveKrenzel-FindingBlurbs.pdf">skipgrams
+	
+	
+	
+	
+	
+	
+						minimum span</a>, or other ngram matching ideas.</p>
+					<h2 id="some-hints:92351f2a225a2a9d81ca1344e332ec47">Some
+	
+	
+	
+	
+	
+	
+					  Hints</h2>
+					<p>There are many ways to write an indexing algorithm.
+					  We have intentionally not specified a particular
+					  algorithm or file format.</p>
+					<p>The primary challenge is to produce a single index
+					  file which uses a variable number of bytes for each
+					  term (because their inverted lists have different
+					  lengths), without any prior knowledge about how long
+					  each list will need to be. Here are a few reasonable
+					  approaches you might consider.</p>
+					<p><strong>Option 1- Required: Merging</strong></p>
+					<p>Create partial inverted lists for all terms in a
+					  single pass through the collection. As each partial
+					  list is filled, append it to the end of a single large
+					  index file. When all documents have been processed,
+					  run through the file a term at a time and merge the
+					  partial lists for each term. This second step can be
+					  greatly accelerated if you keep a list of the
+					  positions of all the partial lists for each term in
+					  some secondary data structure or file.</p>
+					<p><strong><br>
+					   Extra Credit Option: Discontiguous Postings</strong></p>
+					<p>Lay out your index file as a series of fixed-length
+					  records of, say, 4096 bytes each. Each record will
+					  contain a portion of the inverted list for a term. A
+					  record will consist of a header followed by a series
+					  of inverted list entries. The header will specify the
+					  term_id, the number of inverted list entries used in
+					  the record, and the file offset of the next record for
+					  the term. Records are written to the file in a single
+					  pass through the document collection, and the records
+					  for a given term are not necessarily adjacent within
+					  the index.<br>
+					</p>
+					<p><strong><br>
+						Extra Credit Option: Multiple passes</strong> </p>
+					<p>Make multiple passes through the document collection.
+					  In each pass, you create the inverted lists for the
+					  next 1,000 terms, each in its own file. At the end of
+					  each pass, you concatenate the new inverted lists onto
+					  the main index file (easy to concatenate the inverted
+					  files, but have to manage the catalog/offsets files)</p>
+					<h1 id="extra-credit:92351f2a225a2a9d81ca1344e332ec47">Extra
+	
+	
+	
+	
+	
+	
+					  Credit</h1>
+					<p>These extra problems are provided for students who
+					  wish to dig deeper into this project. Extra credit is
+					  meant to be significantly harder and more open-ended
+					  than the standard problems. We strongly recommend
+					  completing all of the above before attempting any of
+					  these problems.</p>
+					<p>Points will be awarded based on the difficulty of the
+					  solution you attempt and how far you get. You will
+					  receive no credit unless your solution is “at least
+					  half right,” as determined by the graders.</p>
+					<h2 id="ec2-multiple-fields:92351f2a225a2a9d81ca1344e332ec47">EC1:
+	
+	
+	
+	
+	
+	
+					  Multiple Fields</h2>
+					<p>Provide the ability to index multiple document
+					  fields. Index the contents of the HEAD fields for a
+					  document (if any) in addition to the TEXT fields.
+					  Update your retrieval models to query the HEAD fields
+					  as well as the TEXT fields, weighting HEAD matches
+					  higher than TEXT matches. Does this improve retrieval
+					  performance? Why?</p>
+					<h2 id="ec3-query-optimization:92351f2a225a2a9d81ca1344e332ec47">EC2:
+	
+	
+	
+	
+	
+	
+					  Query Optimization</h2>
+					<p>Implement and compare multiple query processing
+					  algorithms (e.g., variations of doc-at-a-time and
+					  term-at-a-time matching) to achieve the best possible
+					  query performance. Include at least one inexact query
+					  processing method. How much can you improve query
+					  speed without overly sacrificing result quality?</p>
+					<h3 id="rubric:92351f2a225a2a9d81ca1344e332ec47">Rubric</h3>
+					<dl class="dl-horizontal">
+					  <dt>20 points</dt>
+					  <dd>The correct tokens are produced</dd>
+					  <dt>30 points</dt>
+					  <dd>The correct inverted lists are produced</dd>
+					  <dt>20 points</dt>
+					  <dd>You meet the performance requirements</dd>
+					  <dt>20 points</dt>
+					  <dd>Your retrieval models perform as expected on your
+						index</dd>
+					  <dt>5 points</dt>
+					  <dd>The proximity model perform as expected on your
+						index</dd>
+					  <dt>5 points</dt>
+					  <dd>Report</dd>
+					</dl>
+				  </article>
+				</div>
+			  </div>
+			</div>
+		  </div>
+	</div>
+	<footer>
+		<hr>
+		<center>
+			Ⓒ Northeastern University, 2020, all rights reserved<br><br>
+		</center>
+	</footer>
+
+
+
+</body><div id="__genieContainer" style="all: initial;"></div><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>
